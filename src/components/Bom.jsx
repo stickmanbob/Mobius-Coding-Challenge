@@ -27,7 +27,7 @@ export default class BomView extends React.Component {
             let newBomData = {};
 
             bomData.forEach( item => newBomData[item.pk] = item );
-            console.log(newBomData)
+            
             this.setState({
                 bomData: newBomData,
                 dataFetched: true
@@ -42,7 +42,7 @@ export default class BomView extends React.Component {
             
             let newBomData = Object.assign(this.state.bomData);
 
-            newBomData[pk].fields[field] = e.target.value;
+            newBomData[pk].fields[field] = Number(e.target.value);
 
             this.modifiedItems.add(pk);
 
@@ -82,6 +82,8 @@ export default class BomView extends React.Component {
                     newItems.push(this.state.bomData[itemId]) // - Mocking a successful save
 
                 }
+
+                console.log(newItems); // See changes 
 
                 newItems.forEach(item => newBomData[item.pk] = item);
 
