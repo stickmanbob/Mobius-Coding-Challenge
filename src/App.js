@@ -6,7 +6,7 @@ import BomView from "./components/Bom";
 function App() {
   return (
     <div className="App">
-      <BomView/> 
+      <BomView bomId="1001"/> 
     </div>
   );
 }

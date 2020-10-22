@@ -8,48 +8,104 @@ export default class BomView extends React.Component {
 
         this.state={
             dataFetched: false,
-
         }
+
+        this.modifiedItems = new Set();
+
+        this.handleSubmit = this.handleSubmit.bind(this);
+        this.handleChange = this.handleChange.bind(this); 
     }
 
-    handleChange(idx,field){
-        return (e) =>{
-            e.preventDefault();
-            
-            let newBomData = Array.from(this.state.bomData);
-
-            newBomData[idx].fields[field] = e.target.value;
-
-            this.setState({
-                bomData: newBomData
-            })
-            console.log(this.state)
-        }
-    }
-
+    
     componentDidMount(){
-        fetch('https://www.mobiusmaterials.com/api/v1/bom/1001/',{
+        fetch(`https://www.mobiusmaterials.com/api/v1/bom/${this.props.bomId}/`,{
             method: 'GET',
             mode: 'no-cors' // Allow the API call to go through
         }) // Fetch API always resolves .then calls, so this will still work
-            .then((res) => this.setState({
-                bomData: bomData,
+        .then((res) => {
+            
+            let newBomData = {};
+
+            bomData.forEach( item => newBomData[item.pk] = item );
+            console.log(newBomData)
+            this.setState({
+                bomData: newBomData,
                 dataFetched: true
-            }))
-        console.log(bomData)
+            })
+            
+        })
+    }
+    
+    handleChange(pk,field){
+        return (e) =>{
+            e.preventDefault();
+            
+            let newBomData = Object.assign(this.state.bomData);
+
+            newBomData[pk].fields[field] = e.target.value;
+
+            this.modifiedItems.add(pk);
+
+            this.setState({
+
+                bomData: newBomData,
+            })
+            
+        }
+    }
+
+    async handleSubmit(){
+
+        this.setState({
+            dataFetched: false
+        }, async () => {
+
+                const newItems = [];
+                const newBomData = Object.assign(this.state.bomData);
+                const modifiedItems = Array.from(this.modifiedItems);
+
+                for (let i = 0; i < modifiedItems.length; i++) {
+
+                    let itemId = modifiedItems[i];
+
+                    const res = await fetch(`https://www.mobiusmaterials.com/api/v1/bom/${this.props.bomId}/bomitem/${itemId}`,
+                        {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(this.state.bomData[itemId])
+                        });
+
+                    // if(res.ok) newItems.push(res.json().data)  // If we were actually making a request. Would also add a conditional to handle failed requests
+                    newItems.push(this.state.bomData[itemId]) // - Mocking a successful save
+
+                }
+
+                newItems.forEach(item => newBomData[item.pk] = item);
+
+                this.setState({
+                    bomData: newBomData,
+                    dataFetched: true
+                });
+        })
+        
     }
 
     renderRows(){
 
-        const rows = this.state.bomData.map((part,i) => {
-            let { quantity, specific_part, item_unit_cost} = part.fields;
+        const bomItems = Object.values(this.state.bomData)
+        
+        const rows = bomItems.map((part,i) => {
+            let {  specific_part } = part.fields;
 
             return (
                 <tr key={i}>
                     <td>{specific_part}</td>
-                    <td><input type="number" step="0.01" min="0" value={this.state.bomData[i].fields.item_unit_cost} onChange={this.handleChange(i, "item_unit_cost")} /></td>
+                    <td><input type="number" step="0.01" min="0" value={this.state.bomData[part.pk].fields.item_unit_cost} onChange={this.handleChange(part.pk, "item_unit_cost")} /></td>
                     <td>
-                        <input type="number" min="0" value={this.state.bomData[i].fields.quantity} onChange={this.handleChange(i,"quantity")}/>
+                        <input type="number" min="0" value={this.state.bomData[part.pk].fields.quantity} onChange={this.handleChange(part.pk,"quantity")}/>
                     </td>
                 </tr>
             )
@@ -60,7 +116,7 @@ export default class BomView extends React.Component {
 
     render(){
 
-        if(!this.state.dataFetched) return null; 
+        if (!this.state.dataFetched) return <div class="lds-dual-ring"></div>;
 
         return(
             <section id="BomView">
@@ -79,6 +135,8 @@ export default class BomView extends React.Component {
                         {this.renderRows()}
                     </tbody>
                 </table>
+
+                <button onClick={this.handleSubmit}>Save Changes</button>
             </section>
         )
     }
