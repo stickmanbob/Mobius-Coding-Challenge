@@ -98,7 +98,9 @@ export default class BomView extends React.Component {
     renderRows(){
 
         const bomItems = Object.values(this.state.bomData)
-        
+
+        bomItems.sort((a,b) => a.fields.specific_part - b.fields.specific_part)
+        console.log(bomItems)
         const rows = bomItems.map((part,i) => {
             let {  specific_part } = part.fields;
 
@@ -118,11 +120,11 @@ export default class BomView extends React.Component {
 
     render(){
 
-        if (!this.state.dataFetched) return <div class="lds-dual-ring"></div>;
+        if (!this.state.dataFetched) return <div className="lds-dual-ring"></div>;
 
         return(
             <section id="BomView">
-                <h1>Bill of Materials</h1>
+                <h1>Bill of Materials {this.props.bomId}</h1>
 
                 <table className="bom-table">
                     <thead>
